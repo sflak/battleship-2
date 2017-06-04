@@ -106,7 +106,7 @@ var app = function() {
                     {
                         'player_x': self.player_x,
                         'player_o': self.player_o,
-                        'enemy-board': self.vue.board
+                        'enemy_board': self.vue.board
                     }
                 )
             }
@@ -128,7 +128,12 @@ var app = function() {
             self.server_answer = JSON.parse(data.result);
             self.player_x = self.server_answer.player_x;
             self.player_o = self.server_answer.player_o;
-            self.enemy_board = self.server_answer.enemy_board;
+            // self.enemy_board = self.server_answer.enemy_board;
+            console.log("enemy-board" + self.server_answer.enemy_board);
+            for(var i=0; i<64; i++){
+
+                Vue.set(self.vue.enemy_board, i, self.server_answer.enemy_board[i]);
+            }
             if (self.player_x === null || self.player_o === null) {
                 // Some player is missing. We cannot play yet.
                 self.vue.is_my_turn = false;
@@ -178,7 +183,10 @@ var app = function() {
         } else {
             self.vue.my_role = ' ';
         }
-        self.enemy_board = self.server_answer.enemy_board;
+        // self.enemy_board = self.server_answer.enemy_board;
+        for(var i=0; i<64; i++){
+            Vue.set(self.vue.enemy_board, i, self.server_answer.enemy_board[i]);
+        }
 
         // Reconciles the board, and computes whose turn it is.
         var device_has_newer_state = false;
