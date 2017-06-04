@@ -17,22 +17,38 @@ var app = function() {
     };
 
     self.my_identity = randomString(20);
-    self.null_board = function(){
-        var diff_empty_array = [];
-        for (var i = 0; i<64; i++){
-            Vue.set(diff_empty_array, i, ' ');
-        }
-        return diff_empty_array;
-
-    };
-    self.enemy_null_board = function(){
-        var empty_array = [];
-        for (var i = 0; i<64; i++){
-            Vue.set(empty_array, i, ' ');
-        }
-        return empty_array;
-
-    };
+    // self.null_board = function(){
+    //     var diff_empty_array = [];
+    //     for (var i = 0; i<64; i++){
+    //         Vue.set(diff_empty_array, i, ' ');
+    //     }
+    //     return diff_empty_array;
+    //
+    // };
+    self.null_board = ["", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", ""];
+    self.enemy_null_board = ["", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", ""];
+    // self.enemy_null_board = function(){
+    //     var empty_array = [];
+    //     for (var i = 0; i<64; i++){
+    //         Vue.set(empty_array, i, ' ');
+    //     }
+    //     return empty_array;
+    //
+    // };
 
     // Enumerates an array.
     var enumerate = function(v) {
@@ -105,13 +121,13 @@ var app = function() {
             self.player_x = self.my_identity;
             self.player_o = null;
             self.vue.is_my_turn = false;
+            self.vue.board = getBoard();
             self.send_state();
         } else {
             // I technically don't need to assign this to self, but it helps debug the code.
             self.server_answer = JSON.parse(data.result);
             self.player_x = self.server_answer.player_x;
             self.player_o = self.server_answer.player_o;
-            self.vue.board = self.set_player_board(self.vue.board);
             self.enemy_board = self.server_answer.enemy_board;
             if (self.player_x === null || self.player_o === null) {
                 // Some player is missing. We cannot play yet.
@@ -126,9 +142,11 @@ var app = function() {
                     if (self.player_x === null) {
                         // Preferentially we play as x.
                         self.player_x = self.my_identity;
+                        self.vue.board = getBoard();
                         self.send_state();
                     } else if (self.player_o === null) {
                         self.player_o = self.my_identity;
+                        self.vue.board = getBoard();
                         self.send_state();
                     } else {
                         // The magic word is already taken.
@@ -160,22 +178,23 @@ var app = function() {
         } else {
             self.vue.my_role = ' ';
         }
+        self.enemy_board = self.server_answer.enemy_board;
 
         // Reconciles the board, and computes whose turn it is.
         var device_has_newer_state = false;
-        for (var i = 0; i < 9; i++) {
-            if (self.vue.board[i] === ' ' || server_answer.board[i] !== ' ') {
-                // The server has new information for this board.
-                Vue.set(self.vue.board, i, server_answer.board[i]);
-            } else if (self.vue.board[i] !== ' ' && server_answer.board[i] === ' ') {
-                // The device has newer state.
-                device_has_newer_state = true;
-            } else if (self.vue.board[i] !== server_answer.board[i]
-                && self.vue.board[i] !== ' ' && server_answer.board[i] !== ' ')  {
-                console.log("Board inconsistency at: " + i);
-                console.log("Local:" + self.vue.board[i]);
-                console.log("Server:" + server_answer.board[i]);
-            }
+        for (var i = 0; i < 64; i++) {
+            // if (self.vue.board[i] === ' ' || server_answer.board[i] !== ' ') {
+            //     // The server has new information for this board.
+            //     Vue.set(self.vue.board, i, server_answer.board[i]);
+            // } else if (self.vue.board[i] !== ' ' && server_answer.board[i] === ' ') {
+            //     // The device has newer state.
+            //     device_has_newer_state = true;
+            // } else if (self.vue.board[i] !== server_answer.board[i]
+            //     && self.vue.board[i] !== ' ' && server_answer.board[i] !== ' ')  {
+            //     console.log("Board inconsistency at: " + i);
+            //     console.log("Local:" + self.vue.board[i]);
+            //     console.log("Server:" + server_answer.board[i]);
+            // }
         }
 
         // Compute whether it's my turn on the basis of the now reconciled board.
@@ -208,16 +227,16 @@ var app = function() {
         self.vue.chosen_magic_word = self.vue.magic_word;
         self.vue.need_new_magic_word = false;
         // Resets board and turn.
-        self.vue.board = self.null_board();
+        self.vue.board = self.null_board;
         self.vue.is_my_turn = false;
         self.vue.my_role = "";
     };
-    self.set_player_board = function(board) {
-        var newBoard = getBoard();
-        for(var i = 0; i<64; i++){
-            Vue.set(board, i, newBoard[i]);
-        }
-    };
+    // self.set_player_board = function() {
+    //     var newBoard = getBoard();
+    //     for(var i = 0; i<64; i++){
+    //         Vue.set(self.vue.board, i, newBoard[i]);
+    //     }
+    // };
 
     self.play = function (i, j) {
         // Check that the game is ongoing and that it's our turn to play.
@@ -245,17 +264,16 @@ var app = function() {
             chosen_magic_word: null,
             need_new_magic_word: false,
             my_role: "",
-            board: self.null_board(),
-            enemy_board: self.enemy_null_board(),
+            board: self.null_board,
+            enemy_board: self.enemy_null_board,
             is_other_present: false,
             is_my_turn: false
         },
         methods: {
             set_magic_word: self.set_magic_word,
-            play: self.play,
-            enemy_null_board: self.enemy_null_board(),
-            null_board: self.null_board(),
-            set_player_board: self.set_player_board()
+            play: self.play
+            // enemy_null_board: self.enemy_null_board(),
+            // set_player_board: self.set_player_board()
         }
 
     });
