@@ -76,6 +76,8 @@ var app = function() {
     // This is the object that contains the information coming from the server.
     self.player_x = null;
     self.player_o = null;
+    self.o_board = null;
+    self.x_board = null;
 
     // This is the main control loop.
     function call_server() {
@@ -106,7 +108,8 @@ var app = function() {
                     {
                         'player_x': self.player_x,
                         'player_o': self.player_o,
-                        'enemy_board': self.vue.board
+                        'x_board': self.x_board,
+                        'o_board': self.o_board
                     }
                 )
             }
@@ -122,18 +125,19 @@ var app = function() {
             self.player_o = null;
             self.vue.is_my_turn = false;
             self.vue.board = getBoard();
+            self.x_board = self.vue.board;
+            self.o_board = self.null_board;
             self.send_state();
         } else {
             // I technically don't need to assign this to self, but it helps debug the code.
             self.server_answer = JSON.parse(data.result);
             self.player_x = self.server_answer.player_x;
             self.player_o = self.server_answer.player_o;
-            // self.enemy_board = self.server_answer.enemy_board;
-            console.log("enemy-board" + self.server_answer.enemy_board);
-            for(var i=0; i<64; i++){
+            self.x_board = self.server_answer.x_board;
+            self.o_board = self.server_answer.o_board;
 
-                Vue.set(self.vue.enemy_board, i, self.server_answer.enemy_board[i]);
-            }
+
+
             if (self.player_x === null || self.player_o === null) {
                 // Some player is missing. We cannot play yet.
                 self.vue.is_my_turn = false;
@@ -148,10 +152,15 @@ var app = function() {
                         // Preferentially we play as x.
                         self.player_x = self.my_identity;
                         self.vue.board = getBoard();
+                        self.x_board = self.vue.board;
+                        for(var i=0; i<64; i++){
+                            Vue.set(self.vue.enemy_board, i, self.server_answer.o_board[i]);
+                        }
                         self.send_state();
                     } else if (self.player_o === null) {
                         self.player_o = self.my_identity;
                         self.vue.board = getBoard();
+                        self.o_board = self.vue.board;
                         self.send_state();
                     } else {
                         // The magic word is already taken.
@@ -170,6 +179,11 @@ var app = function() {
                     // Reconciles the state.
                     self.update_local_vars(self.server_answer);
                 }
+                if(self.player_x === self.my_identity){
+                    self.vue.enemy_board = self.server_answer.o_board;
+                }else if (self.player_o === self.my_identity){
+                    self.vue.enemy_board = self.server_answer.x_board;
+                }
             }
         }
     };
@@ -182,10 +196,6 @@ var app = function() {
             self.vue.my_role = 'x';
         } else {
             self.vue.my_role = ' ';
-        }
-        // self.enemy_board = self.server_answer.enemy_board;
-        for(var i=0; i<64; i++){
-            Vue.set(self.vue.enemy_board, i, self.server_answer.enemy_board[i]);
         }
 
         // Reconciles the board, and computes whose turn it is.
@@ -211,6 +221,7 @@ var app = function() {
 
         // If we have newer state than the server, we send it to the server.
         if (device_has_newer_state) {
+            console.log("messing with stuff");
             self.send_state();
         }
     };
@@ -246,21 +257,21 @@ var app = function() {
     //     }
     // };
 
-    self.play = function (i, j) {
-        // Check that the game is ongoing and that it's our turn to play.
-        if (!self.vue.is_my_turn) {
-            return;
-        }
-        // Check also that the square is empty.
-        if (self.vue.board[i * 3 + j] !== ' ') {
-            return;
-        }
-        // Update self.vue.board.
-        Vue.set(self.vue.board, i * 3 + j, self.vue.my_role);
-        // We have already played.
-        self.vue.is_my_turn = false;
-        self.send_state();
-    };
+    // self.play = function (i, j) {
+    //     // Check that the game is ongoing and that it's our turn to play.
+    //     if (!self.vue.is_my_turn) {
+    //         return;
+    //     }
+    //     // Check also that the square is empty.
+    //     if (self.vue.board[i * 3 + j] !== ' ') {
+    //         return;
+    //     }
+    //     // Update self.vue.board.
+    //     Vue.set(self.vue.board, i * 3 + j, self.vue.my_role);
+    //     // We have already played.
+    //     self.vue.is_my_turn = false;
+    //     self.send_state();
+    // };
 
 
     self.vue = new Vue({
@@ -274,6 +285,8 @@ var app = function() {
             my_role: "",
             board: self.null_board,
             enemy_board: self.enemy_null_board,
+            x_board: self.null_board,
+            o_board: self.null_board,
             is_other_present: false,
             is_my_turn: false
         },
