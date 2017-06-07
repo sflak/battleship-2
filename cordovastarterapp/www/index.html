@@ -60,7 +60,7 @@
         <div class="enemy board container">
             <table>
                 <tr v-for="i in [0, 1, 2, 3, 4, 5, 6, 7]">
-                    <td v-on:click="play(i,j)" v-for="j in [0, 1, 2, 3, 4, 5, 6, 7]">
+                    <td v-on:click="play(i * 8 + j)" v-for="j in [0, 1, 2, 3, 4, 5, 6, 7]">
                         ${enemy_board[i * 8 + j]}
                     </td>
                 </tr>
